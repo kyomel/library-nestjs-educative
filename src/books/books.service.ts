@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Book, Language } from './entities/books.entity';
+import { CreateBookDto } from '../dto/create-book.dto';
+import generateId from 'src/helper/generateId';
 
 @Injectable()
 export class BooksService {
@@ -24,5 +26,23 @@ export class BooksService {
 
   findBooks() {
     return this.books;
+  }
+
+  createBook(data: CreateBookDto): Book {
+    const book = {
+      id: generateId(),
+      ...data,
+    };
+
+    this.books.push(book);
+    return book;
+  }
+
+  findBookById(bookId: number) {
+    const book = this.books.find((book) => book.id === bookId);
+    if (!book) {
+      throw new NotFoundException(`Book with id ${bookId} not found`);
+    }
+    return book;
   }
 }

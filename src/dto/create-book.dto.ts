@@ -1,4 +1,4 @@
-import { Language } from '../entities/books.entity';
+import { Language } from '../books/entities/books.entity';
 
 export class CreateBookDto {
   title: string;
