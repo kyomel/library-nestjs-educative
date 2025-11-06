@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Post } from '@nestjs/common';
+import { Controller, Get, Body, Post, Param } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDto } from '../dto/create-book.dto';
 
@@ -14,5 +14,10 @@ export class BooksController {
   @Post()
   create(@Body() body: CreateBookDto) {
     return this.booksService.createBook(body);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.booksService.findBookById(Number(id));
   }
 }
