@@ -7,6 +7,7 @@ import {
   Patch,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDto } from '../dto/create-book.dto';
@@ -28,12 +29,12 @@ export class BooksController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.booksService.findBookById(Number(id));
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.booksService.findBookById(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateBookDto) {
+  update(@Param('id') id: number, @Body() body: UpdateBookDto) {
     const book = this.booksService.updateBook(+id, body);
     return book;
   }
