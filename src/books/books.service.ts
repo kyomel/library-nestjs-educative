@@ -1,141 +1,101 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Book, Language } from './entities/books.entity';
+import { Book } from './entities/books.entity';
 import { CreateBookDto } from '../dto/create-book.dto';
 import { UpdateBookDto } from '../dto/update-book.dto';
 import { GetBookFilterDto } from '../dto/get-book-filter.dto';
-import generateId from 'src/helper/generateId';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import PostgreSQLErrorCode from '../postgresql-error-codes';
 
 @Injectable()
 export class BooksService {
-  private books: Book[] = [
-    {
-      id: 1,
-      title: 'Mes aventures du codes',
-      publicationDate: '2022-02-28',
-      numberOfPages: 10,
-      author: 'John Doe',
-      language: Language.FRENCH,
-    },
-    {
-      id: 2,
-      title: 'Shadows of Tomorrow',
-      author: 'John Smith',
-      publicationDate: '2021-01-10',
-      numberOfPages: 400,
-      language: Language.ENGLISH,
-    },
-    {
-      id: 3,
-      numberOfPages: 400,
-      title: 'The Lost Chronicles',
-      author: 'Alex Johnson',
-      publicationDate: '2023-03-15',
-      language: Language.ENGLISH,
-    },
-    {
-      id: 4,
-      numberOfPages: 200,
-      title: 'Secrets of the Starlight Kingdom',
-      author: 'Emily Smith',
-      publicationDate: '2022-11-02',
-      language: Language.ENGLISH,
-    },
-    {
-      id: 5,
-      numberOfPages: 382,
-      title: 'Galactic Adventures',
-      author: 'Luna Stardust',
-      publicationDate: '2021-06-20',
-      language: Language.ENGLISH,
-    },
-    {
-      id: 6,
-      numberOfPages: 87,
-      title: 'Whispers in the Woods',
-      author: 'Olivia Whisperingbrook',
-      publicationDate: '2021-06-20',
-      language: Language.ENGLISH,
-    },
-    {
-      id: 7,
-      numberOfPages: 700,
-      title: 'Secrets Unveiled',
-      author: 'Alex Johnson',
-      publicationDate: '2021-08-15',
-      language: Language.ENGLISH,
-    },
-  ];
+  constructor(
+    @InjectRepository(Book)
+    private booksRepository: Repository<Book>,
+  ) {}
 
-  findBooks(filterDto: GetBookFilterDto) {
-    const {
-      search,
-      author,
-      publication_date: publicationDate,
-      language,
-    } = filterDto;
-
-    let filteredBooks = this.books;
+  async findBooks(filterDto: GetBookFilterDto) {
+    const { search, publication_date: publicationDate, language } = filterDto;
+    const query = this.booksRepository
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.author', 'author');
 
     if (search) {
-      filteredBooks = filteredBooks.filter(
-        (book) =>
-          book.title.toLowerCase().includes(search.toLowerCase()) ||
-          book.author.toLowerCase().includes(search.toLowerCase()),
-      );
-    }
-
-    if (author) {
-      filteredBooks = filteredBooks.filter(
-        (book) => book.author.toLowerCase() === author.toLowerCase(),
-      );
+      query.andWhere('book.title LIKE :search OR book.author LIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     if (publicationDate) {
-      filteredBooks = filteredBooks.filter(
-        (book) => book.publicationDate === publicationDate,
-      );
+      query.andWhere('book.publicationDate = :publicationDate', {
+        publicationDate,
+      });
     }
 
     if (language) {
-      filteredBooks = filteredBooks.filter(
-        (book) => book.language === language,
-      );
+      query.andWhere('book.language = :language', { language });
     }
 
-    return filteredBooks;
+    const books = await query.getMany();
+    return books;
   }
 
-  createBook(data: CreateBookDto): Book {
-    const book = {
-      id: generateId(),
-      ...data,
-    };
+  async createBook(createBookDto: CreateBookDto) {
+    const book = this.booksRepository.create({
+      ...createBookDto,
+      author: {
+        id: createBookDto.authorId,
+      },
+    });
 
-    this.books.push(book);
-    return book;
+    try {
+      return await this.booksRepository.save(book);
+    } catch (error) {
+      if (error.code === PostgreSQLErrorCode.ForeignKeyViolation) {
+        throw new NotFoundException(
+          `Author with id ${createBookDto.authorId} doesn't exist`,
+        );
+      }
+      throw error;
+    }
   }
 
-  findBookById(bookId: number) {
-    const book = this.books.find((book) => book.id === bookId);
+  async findBookById(bookId: number) {
+    const book = await this.booksRepository.findOneBy({ id: bookId });
     if (!book) {
       throw new NotFoundException(`Book with id ${bookId} not found`);
     }
     return book;
   }
 
-  updateBook(bookId: number, updateBook: UpdateBookDto) {
-    const book = this.findBookById(bookId);
-    Object.assign(book, updateBook);
-    return book;
+  async updateBook(bookId: number, updateBook: UpdateBookDto) {
+    try {
+      const book = await this.booksRepository.preload({
+        id: bookId,
+        ...updateBook,
+        ...(updateBook.authorId ? { author: { id: updateBook.authorId } } : {}),
+      });
+
+      if (!book) {
+        throw new NotFoundException(`Book with id ${bookId} not found`);
+      }
+
+      return await this.booksRepository.save(book);
+    } catch (error) {
+      if (error.code === PostgreSQLErrorCode.ForeignKeyViolation) {
+        throw new NotFoundException(
+          `Author with id ${updateBook.authorId} doesn't exist`,
+        );
+      }
+      throw error;
+    }
   }
 
-  deleteBook(bookId: number) {
-    const index = this.books.findIndex((book) => book.id === bookId);
-    console.log(index);
-    if (index !== -1) {
-      this.books.splice(index, 1);
-      return { message: `Book with id ${bookId} deleted successfully` };
+  async deleteBook(bookId: number) {
+    const book = await this.booksRepository.findOneBy({ id: bookId });
+    if (!book) {
+      throw new NotFoundException(`Book with id ${bookId} not found`);
     }
-    throw new NotFoundException(`Book with id ${bookId} not found`);
+    return this.booksRepository.remove(book);
   }
 }

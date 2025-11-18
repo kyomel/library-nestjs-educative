@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsInt,
 } from 'class-validator';
 import { Language } from '../books/entities/books.entity';
 
@@ -12,19 +13,15 @@ export class CreateBookDto {
   @IsNotEmpty()
   title: string;
 
-  @IsString()
-  @IsNotEmpty()
-  author: string;
+  @IsInt()
+  authorId: number;
 
   @IsDateString()
-  @IsNotEmpty()
   publicationDate: string;
 
   @IsNumber()
-  @IsNotEmpty()
   numberOfPages: number;
 
   @IsEnum(Language)
-  @IsNotEmpty()
   language: Language;
 }
