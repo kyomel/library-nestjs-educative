@@ -7,6 +7,7 @@ import { Book } from './books/entities/books.entity';
 import { Author } from './authors/entities/author.entity';
 import { AuthorsModule } from './authors/authors.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -38,6 +39,7 @@ import * as Joi from 'joi';
     }),
     BooksModule,
     AuthorsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
