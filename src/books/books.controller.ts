@@ -15,6 +15,7 @@ import { CreateBookDto } from '../dto/create-book.dto';
 import { UpdateBookDto } from '../dto/update-book.dto';
 import { GetBookFilterDto } from '../dto/get-book-filter.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @UseGuards(AuthGuard)
 @Controller('books')
@@ -22,7 +23,11 @@ export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   @Get()
-  findAll(@Query() filterDto: GetBookFilterDto) {
+  findAll(
+    @Query() filterDto: GetBookFilterDto,
+    @CurrentUser('email') userInfo,
+  ) {
+    console.log(userInfo);
     return this.booksService.findBooks(filterDto);
   }
 
