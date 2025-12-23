@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 import SignUpDto from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { JwtService } from '@nestjs/jwt';
-import PostgreSQLErrorCode from 'src/postgresql-error-codes';
+import PostgreSQLErrorCode from '../postgresql-error-codes';
 
 @Injectable()
 export class AuthService {
