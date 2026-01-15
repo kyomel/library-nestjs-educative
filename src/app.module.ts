@@ -18,7 +18,7 @@ import { User } from './auth/entities/user.entity';
       validationSchema: Joi.object({
         NODE_ENV: Joi.string().valid('dev', 'prod', 'test').default('dev'),
         DATABASE_HOST: Joi.string().required(),
-        DATABASE_PORT: Joi.number().required(),
+        DATABASE_PORT: Joi.number().required().default(5432),
         DATABASE_USER: Joi.string().required(),
         DATABASE_PASSWORD: Joi.string().required(),
         DATABASE_NAME: Joi.string().required(),
@@ -47,4 +47,4 @@ import { User } from './auth/entities/user.entity';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
