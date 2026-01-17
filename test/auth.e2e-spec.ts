@@ -58,4 +58,23 @@ describe('AuthController (e2e)', () => {
                     .expect(HttpStatus.BAD_REQUEST);
           });
      })
+
+     describe('/auth/signin (POST)', () => {
+          it('should successfully login user with valid credentials and return an access token', () => {
+               return request(app.getHttpServer())
+                    .post('/auth/signin')
+                    .send({ email: ["johndoe@gmail.com"], password: "12345678" })
+                    .expect(HttpStatus.OK)
+                    .expect((res) => {
+                         expect(res.body.accessToken).toEqual(expect.any(String));
+                    });
+          });
+
+          it('should deny access for invalid login credentials', () => {
+               return request(app.getHttpServer())
+                    .post('/auth/signin')
+                    .send({ email: ["johndoe@gmail.com"], password: "xxxxxxxxxxx" })
+                    .expect(HttpStatus.UNAUTHORIZED);
+          });
+     });
 });
