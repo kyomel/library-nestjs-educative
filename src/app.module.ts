@@ -10,9 +10,31 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
 import { User } from './auth/entities/user.entity';
+import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [
+    LoggerModule.forRoot({
+      pinoHttp: {
+        redact: [
+          'req.headers.authorization',
+          'req.body.email',
+          'req.body.password',
+        ],
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            singleLine: true,
+          },
+        },
+        serializers: {
+          req(req) {
+            req.body = req.raw.body;
+            return req;
+          },
+        },
+      },
+    }),
     ConfigModule.forRoot({
       envFilePath: `.${process.env.NODE_ENV}.env`,
       validationSchema: Joi.object({
@@ -47,4 +69,4 @@ import { User } from './auth/entities/user.entity';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
